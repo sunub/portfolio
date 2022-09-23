@@ -2,100 +2,131 @@ import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import gsap from "gsap";
+import * as dat from "lil-gui";
+import { Clock, Group } from "three";
 
-class App {
-  canvasDom = document.getElementById("root");
-  stageWidth = document.body.clientWidth;
-  stageHeight = document.body.clientHeight;
-  scene = new THREE.Scene();
-  renderer = new THREE.WebGLRenderer({ canvas: this.canvasDom });
-  cursor = { x: 0, y: 0 };
-  constructor() {
-    this.setMesh();
-    this.setCamera();
-    this.renderer.setSize(this.stageWidth, this.stageHeight);
+const canvasDOM = document.getElementById("root");
+let stageWidth = document.body.clientWidth;
+let stageHeight = document.body.clientHeight;
 
-    this.orbitCtrl = new OrbitControls(this.camera, this.canvasDom);
-    this.orbitCtrl.enableDamping = true;
-    this.orbitCtrl.zoomSpeed = 0.7;
+// Scene
 
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const scene = new THREE.Scene();
 
-    window.addEventListener("dblclick", (e) => {
-      const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+// Camera
 
-      if (!fullscreenElement) {
-        if (this.canvasDom.requestFullscreen) {
-          this.canvasDom.requestFullscreen();
-        } else if (this.canvasDom.webkitFullscreenElement) {
-          this.canvasDom.webkitFullscreenElement();
-        }
-      } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        }
-      }
-    });
-    window.addEventListener("resize", this.resize.bind(this), false);
-    window.addEventListener("mousemove", (e) => {
-      this.cursor.x = e.clientX / this.stageWidth - 0.5;
-      this.cursor.y = e.clientY / this.stageHeight - 0.5;
-    });
-    window.requestAnimationFrame(this.animate.bind(this));
-  }
+const aspect = stageWidth / stageHeight;
+const camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+camera.position.set(0, 0, 10);
+scene.add(camera);
 
-  resize() {
-    this.stageWidth = document.body.clientWidth;
-    this.stageHeight = document.body.clientHeight;
+// Controller
 
-    console.log(this.stageWidth);
+const control = new OrbitControls(camera, canvasDOM);
+control.enableDamping = true;
+control.rotateSpeed = 1.5;
+control.zoomSpeed = 1;
 
-    this.canvasDom.style.width = this.stageWidth;
-    this.canvasDom.style.height = this.stageHeight;
+// Img, Texture
 
-    this.camera.aspect = this.stageWidth / this.stageHeight;
-    this.camera.updateProjectionMatrix();
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load("./img/door/color.jpg");
+texture.magFilter = THREE.NearestFilter;
+const cubeTextureLoader = new THREE.CubeTextureLoader();
+const environmentMapTexture = cubeTextureLoader.load([
+  "./img/environmentMaps/0/px.jpg",
+  "./img/environmentMaps/0/nx.jpg",
+  "./img/environmentMaps/0/py.jpg",
+  "./img/environmentMaps/0/ny.jpg",
+  "./img/environmentMaps/0/pz.jpg",
+  "./img/environmentMaps/0/nz.jpg",
+]);
 
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.setSize(this.stageWidth, this.stageHeight);
-  }
+// Mesh
 
-  setCamera() {
-    const aspect = this.stageWidth / this.stageHeight;
-    this.fov = 75;
-    this.camera = new THREE.PerspectiveCamera(75, aspect, 1, 1000);
-    this.camera.position.set(0, 0, 3);
-    this.scene.add(this.camera);
-  }
+const materials = new THREE.MeshStandardMaterial();
+materials.metalness = 0.7;
+materials.roughness = 0.2;
+materials.envMap = environmentMapTexture;
 
-  setMesh() {
-    const geometry = new THREE.BufferGeometry();
+const group = new THREE.Group();
+const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), materials);
+sphere.position.x = -1.5;
+group.add(sphere);
 
-    let count = 50;
-    const positionsArray = new Float32Array(count * 3 * 3);
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), materials);
+plane.position.x = 1.5;
+group.add(plane);
 
-    for (let i = 0; i < count * 3 * 3; i++) {
-      positionsArray[i] = (Math.random() - 0.5) * 4;
-    }
+const torus = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.2, 16, 32), materials);
+torus.position.x = 0;
 
-    const positionAttribute = new THREE.BufferAttribute(positionsArray, 3);
+group.add(torus);
 
-    geometry.setAttribute("position", positionAttribute);
-    this.mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ wireframe: true }));
-    this.scene.add(this.mesh);
-  }
+scene.add(group);
 
-  animate() {
-    window.requestAnimationFrame(this.animate.bind(this));
+/**
+ * Debug UI
+ */
 
-    this.orbitCtrl.update();
+const gui = new dat.GUI();
+gui.add(materials, "metalness").min(0).max(1).step(0.0001);
+gui.add(materials, "roughness").min(0).max(1).step(0.0001);
+/**
+ * Ligths
+ */
 
-    this.renderer.render(this.scene, this.camera);
-  }
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
+
+const pointLight = new THREE.PointLight(0xffffff, 0.5);
+pointLight.position.set(2, 3, 4);
+scene.add(pointLight);
+
+// Renderer
+
+const renderer = new THREE.WebGLRenderer({ canvas: canvasDOM });
+const pixel = window.devicePixelRatio > 1 ? 2 : 1;
+renderer.setPixelRatio(pixel);
+renderer.setSize(stageWidth, stageHeight);
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(animate.bind(this));
+
+// EventListener
+
+window.addEventListener("resize", resize.bind(this));
+
+function animate() {
+  renderer.setAnimationLoop(animate.bind(this));
+
+  control.update();
+  tick();
+
+  renderer.render(scene, camera);
 }
 
-window.onload = () => {
-  new App();
-};
+function tick() {
+  const elapsedTime = clock.getElapsedTime();
+
+  sphere.rotation.y = 0.1 * elapsedTime;
+  plane.rotation.y = 0.1 * elapsedTime;
+  torus.rotation.y = 0.1 * elapsedTime;
+
+  sphere.rotation.x = 0.15 * elapsedTime;
+  plane.rotation.x = 0.15 * elapsedTime;
+  torus.rotation.x = 0.15 * elapsedTime;
+}
+
+function resize() {
+  stageWidth = document.body.clientWidth;
+  stageHeight = document.body.clientHeight;
+
+  canvasDOM.style.width = stageWidth;
+  canvasDOM.style.height = stageHeight;
+
+  camera.aspect = stageWidth / stageHeight;
+  camera.updateProjectionMatrix();
+
+  renderer.setPixelRatio(pixel);
+  renderer.setSize(stageWidth, stageHeight);
+}
