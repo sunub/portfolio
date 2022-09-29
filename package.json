@@ -26,6 +26,7 @@
     "webpack-dev-server": "^4.11.0"
   },
   "dependencies": {
+    "cannon": "github:schteppe/cannon.js",
     "dat.gui": "^0.7.9",
     "git": "^0.1.5",
     "gsap": "^3.11.1",

@@ -1,132 +1,55 @@
 import "./style.css";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import gsap from "gsap";
-import * as dat from "lil-gui";
-import { Clock, Group } from "three";
+import Mesh from "./basic/mesh.js";
+import Camera from "./basic/camera.js";
+import Character from "./basic/character.js";
+import Control from "./control.js";
+import Light from "./basic/light.js";
 
-const canvasDOM = document.getElementById("root");
-let stageWidth = document.body.clientWidth;
-let stageHeight = document.body.clientHeight;
-
-// Scene
-
-const scene = new THREE.Scene();
-
-// Camera
-
-const aspect = stageWidth / stageHeight;
-const camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-camera.position.set(0, 0, 10);
-scene.add(camera);
-
-// Controller
-
-const control = new OrbitControls(camera, canvasDOM);
-control.enableDamping = true;
-control.rotateSpeed = 1.5;
-control.zoomSpeed = 1;
-
-// Img, Texture
-
-const textureLoader = new THREE.TextureLoader();
-const texture = textureLoader.load("./img/door/color.jpg");
-texture.magFilter = THREE.NearestFilter;
-const cubeTextureLoader = new THREE.CubeTextureLoader();
-const environmentMapTexture = cubeTextureLoader.load([
-  "./img/environmentMaps/0/px.jpg",
-  "./img/environmentMaps/0/nx.jpg",
-  "./img/environmentMaps/0/py.jpg",
-  "./img/environmentMaps/0/ny.jpg",
-  "./img/environmentMaps/0/pz.jpg",
-  "./img/environmentMaps/0/nz.jpg",
-]);
-
-// Mesh
-
-const materials = new THREE.MeshStandardMaterial();
-materials.metalness = 0.7;
-materials.roughness = 0.2;
-materials.envMap = environmentMapTexture;
-
-const group = new THREE.Group();
-const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), materials);
-sphere.position.x = -1.5;
-group.add(sphere);
-
-const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), materials);
-plane.position.x = 1.5;
-group.add(plane);
-
-const torus = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.2, 16, 32), materials);
-torus.position.x = 0;
-
-group.add(torus);
-
-scene.add(group);
-
-/**
- * Debug UI
- */
-
-const gui = new dat.GUI();
-gui.add(materials, "metalness").min(0).max(1).step(0.0001);
-gui.add(materials, "roughness").min(0).max(1).step(0.0001);
-/**
- * Ligths
- */
-
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-scene.add(ambientLight);
-
-const pointLight = new THREE.PointLight(0xffffff, 0.5);
-pointLight.position.set(2, 3, 4);
-scene.add(pointLight);
-
-// Renderer
-
-const renderer = new THREE.WebGLRenderer({ canvas: canvasDOM });
-const pixel = window.devicePixelRatio > 1 ? 2 : 1;
-renderer.setPixelRatio(pixel);
-renderer.setSize(stageWidth, stageHeight);
-const clock = new THREE.Clock();
-renderer.setAnimationLoop(animate.bind(this));
-
-// EventListener
-
-window.addEventListener("resize", resize.bind(this));
-
-function animate() {
-  renderer.setAnimationLoop(animate.bind(this));
-
-  control.update();
-  tick();
-
-  renderer.render(scene, camera);
-}
-
-function tick() {
-  const elapsedTime = clock.getElapsedTime();
-
-  sphere.rotation.y = 0.1 * elapsedTime;
-  plane.rotation.y = 0.1 * elapsedTime;
-  torus.rotation.y = 0.1 * elapsedTime;
-
-  sphere.rotation.x = 0.15 * elapsedTime;
-  plane.rotation.x = 0.15 * elapsedTime;
-  torus.rotation.x = 0.15 * elapsedTime;
-}
-
-function resize() {
+class App {
+  canvasDom = document.getElementById("root");
   stageWidth = document.body.clientWidth;
   stageHeight = document.body.clientHeight;
+  constructor() {
+    this.scene = new THREE.Scene();
+    this.camera = new Camera();
+    this.mesh = new Mesh();
+    this.light = new Light();
+    this.control = new Control(this.camera.camera, this.canvasDom);
+    this.setRender();
+    this.setScene();
 
-  canvasDOM.style.width = stageWidth;
-  canvasDOM.style.height = stageHeight;
+    const helper = new THREE.AxesHelper(10);
+    this.scene.add(helper);
 
-  camera.aspect = stageWidth / stageHeight;
-  camera.updateProjectionMatrix();
+    this.character = new Character(this.scene);
 
-  renderer.setPixelRatio(pixel);
-  renderer.setSize(stageWidth, stageHeight);
+    this.renderer.setAnimationLoop(this.animate.bind(this));
+  }
+
+  setScene() {
+    this.scene.add(this.camera.camera);
+    this.scene.add(this.mesh.Mesh);
+    this.scene.add(this.light.hemisphereLight);
+    this.scene.add(this.light.shadowLight);
+  }
+
+  setRender() {
+    this.renderer = new THREE.WebGLRenderer({ canvas: this.canvasDom });
+    this.renderer.setSize(this.stageWidth, this.stageHeight);
+    this.renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+    this.renderer.shadowMap = true;
+  }
+
+  animate() {
+    this.renderer.setAnimationLoop(this.animate.bind(this));
+
+    this.control.controler.update();
+
+    this.renderer.render(this.scene, this.camera.camera);
+  }
 }
+
+window.onload = () => {
+  new App();
+};
