@@ -8,7 +8,13 @@ export default class Control {
 
   setControl() {
     this.controler.enableDamping = true;
+    this.controler.dampingFactor = 0.05;
     this.controler.rotateSpeed = 1.5;
     this.controler.zoomSpeed = 0.5;
+    // this.controler.screenSpacePanning = false;
+
+    // this.controler.minDistance = 0.5;
+    // this.controler.maxDistance = 7;
+    // this.controler.maxPolarAngle = Math.PI / 2;
   }
 }
