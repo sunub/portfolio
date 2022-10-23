@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-  </head>
-  <body>
-    <script id="vertexShader" type="x-shader/x-vertex">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <script id="vertexShader" type="x-shader/x-vertex">
 
       #include <fog_pars_vertex>
 
@@ -24,7 +26,7 @@
       }
     </script>
 
-    <script id="fragmentShader" type="x-shader/x-fragment">
+  <script id="fragmentShader" type="x-shader/x-fragment">
 
       #include <common>
       #include <packing>
@@ -79,7 +81,8 @@
 
       }
     </script>
-    <canvas id="root"></canvas>
-    <div id="controls"></div>
-  </body>
+  <canvas id="root"></canvas>
+  <div id="controls"></div>
+</body>
+
 </html>
