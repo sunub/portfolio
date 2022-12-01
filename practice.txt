@@ -1,0 +1,95 @@
+import { useState, useEffect } from "react";
+import Clicker from "./Clicker";
+
+function App({ children, clickersCount, colors }: any) {
+  const [hasClick, setHasClicker] = useState(true);
+  const [count, setCount] = useState(0);
+
+  const toggleClickerClick = () => {
+    setHasClicker(!hasClick);
+    setCount(0);
+  };
+
+  const increment = () => {
+    setCount(count + 1);
+  };
+
+  const words = (
+    <div>
+      {children}
+      <div>Total Count : {count}</div>
+      <button onClick={toggleClickerClick}>{hasClick ? "Show" : "Hide"} Clicker</button>
+      {hasClick && (
+        <>
+          {[...Array(clickersCount)].map((value, index) => (
+            <Clicker keyName={`count${index}`} color={colors[index]} increment={increment} />
+          ))}
+        </>
+      )}
+    </div>
+  );
+  return words;
+}
+
+export default App;
+
+
+
+import { useRef, useEffect, useState } from "react";
+
+const Clicker = ({ increment, keyName, color }: any) => {
+  const [count, setCount] = useState(Number(localStorage.getItem(keyName)));
+
+  const buttonRef = useRef(null);
+
+
+  useEffect(() => {
+    localStorage.setItem(keyName, count.toString());
+  }, [count]);
+
+  useEffect(() => {
+    return () => {
+      localStorage.removeItem(keyName);
+    };
+  }, []);
+
+  return (
+    <div style={{ color: color }}>
+      <p>Click Count : {count}</p>
+      <button
+        onClick={() => {
+          setCount(count + 1);
+          increment();
+        }}
+        ref={buttonRef}
+      >
+        CLICK ME!
+      </button>
+    </div>
+  );
+};
+
+export default Clicker;
+
+
+
+import React from "react-dom/client";
+import "/src/style.css";
+import App from "./App";
+
+const root = React.createRoot(document.getElementById("root") as HTMLElement);
+
+const clickCount = 3;
+const colors: string[] = [];
+for (let i = 0; i < clickCount; i++) {
+  colors.push(`hsl(${Math.random() * 360}deg, 100%, 75%)`);
+}
+
+root.render(
+  <div id="title">
+    <App clickersCount={clickCount} colors={colors}>
+      <h1>My First React App</h1>
+      <h2>And a fancy subtitle</h2>
+    </App>
+  </div>
+);
